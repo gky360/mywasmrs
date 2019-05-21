@@ -1,3 +1,4 @@
+use bit_vec::BitVec;
 use js_sys::Math;
 use std::fmt;
 use wasm_bindgen::prelude::*;
@@ -11,27 +12,10 @@ mod utils;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Cell {
-    Dead = 0,
-    Alive = 1,
-}
-
-impl fmt::Display for Cell {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Cell::Dead => write!(f, "◻"),
-            Cell::Alive => write!(f, "◼"),
-        }
-    }
-}
-
-#[wasm_bindgen]
 pub struct Universe {
     width: usize,
     height: usize,
-    cells: Vec<Cell>,
+    cells: BitVec,
 }
 
 impl Universe {
@@ -60,16 +44,12 @@ impl Universe {
     pub fn new() -> Universe {
         let width = 64;
         let height = 64;
+        let size = width * height;
 
-        let cells = (0..width * height)
-            .map(|_| {
-                if Math::random() < 0.5 {
-                    Cell::Alive
-                } else {
-                    Cell::Dead
-                }
-            })
-            .collect();
+        let mut cells = BitVec::from_elem(size, false);
+        for i in 0..size {
+            cells.set(i, Math::random() >= 0.5)
+        }
 
         Universe {
             width,
@@ -86,8 +66,8 @@ impl Universe {
         self.height
     }
 
-    pub fn cells(&self) -> *const Cell {
-        self.cells.as_ptr()
+    pub fn cells(&self) -> *const u32 {
+        self.cells.storage().as_ptr()
     }
 
     pub fn tick(&mut self) {
@@ -100,12 +80,12 @@ impl Universe {
                 let live_neighbors = self.live_neighbor_count(row, col);
 
                 let next_cell = match (cell, live_neighbors) {
-                    (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
-                    (Cell::Alive, _) => Cell::Dead,
-                    (Cell::Dead, 3) => Cell::Alive,
+                    (true, 2) | (true, 3) => true,
+                    (true, _) => false,
+                    (false, 3) => true,
                     (cell, _) => cell,
                 };
-                next[idx] = next_cell;
+                next.set(idx, next_cell);
             }
         }
         self.cells = next;
@@ -118,9 +98,10 @@ impl Universe {
 
 impl fmt::Display for Universe {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for line in self.cells.as_slice().chunks(self.width as usize) {
-            for &cell in line {
-                write!(f, "{}", cell)?;
+        for i in 0..self.height {
+            for j in 0..self.width {
+                let idx = self.get_index(i, j);
+                write!(f, "{}", if self.cells[idx] { "◼" } else { "◻" })?;
             }
             writeln!(f, "")?;
         }

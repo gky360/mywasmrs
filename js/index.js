@@ -1,5 +1,5 @@
 const run = async () => {
-  const { Cell, Universe } = await import("../crate/pkg");
+  const { Universe } = await import("../crate/pkg");
   const { memory } = await import("../crate/pkg/mywasmrs_bg");
 
   const CELL_SIZE = 5; // px
@@ -49,17 +49,22 @@ const run = async () => {
     return row * width + col;
   };
 
+  const isAlive = (row, col, arr) => {
+    const idx = getIndex(row, col);
+    const byte_idx = Math.floor(idx / 8);
+    const mask = 1 << idx % 8;
+    return (arr[byte_idx] & mask) === mask;
+  };
+
   const drawCells = () => {
     const cellsPtr = universe.cells();
-    const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
+    const cells = new Uint8Array(memory.buffer, cellsPtr, (width * height) / 8);
 
     ctx.beginPath();
 
     for (let row = 0; row < height; row++) {
       for (let col = 0; col < width; col++) {
-        const idx = getIndex(row, col);
-
-        ctx.fillStyle = cells[idx] === Cell.Dead ? DEAD_COLOR : ALIVE_COLOR;
+        ctx.fillStyle = isAlive(row, col, cells) ? ALIVE_COLOR : DEAD_COLOR;
 
         ctx.fillRect(
           col * (CELL_SIZE + 1) + 1,
