@@ -8,7 +8,8 @@
   "license": "MIT",
   "scripts": {
     "start": "webpack-dev-server -d",
-    "build": "webpack"
+    "build": "webpack -p",
+    "test": "wasm-pack test --node"
   },
   "devDependencies": {
     "@wasm-tool/wasm-pack-plugin": "^0.3.0",
