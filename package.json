@@ -9,7 +9,7 @@
   "scripts": {
     "start": "webpack-dev-server -d",
     "build": "webpack -p",
-    "test": "wasm-pack test --node"
+    "test": "cd crate && wasm-pack test --node"
   },
   "devDependencies": {
     "@wasm-tool/wasm-pack-plugin": "^0.3.0",
