@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[macro_use]
+extern crate wasm_bindgen_test;
+
 use bit_vec::BitVec;
 use js_sys::Math;
 use std::fmt;
@@ -41,9 +45,7 @@ impl Universe {
 
 #[wasm_bindgen]
 impl Universe {
-    pub fn new() -> Universe {
-        let width = 64;
-        let height = 64;
+    pub fn new(height: usize, width: usize) -> Universe {
         let size = width * height;
 
         let mut cells = BitVec::from_elem(size, false);
@@ -66,7 +68,7 @@ impl Universe {
         self.height
     }
 
-    pub fn cells(&self) -> *const u32 {
+    pub fn cells_ptr(&self) -> *const u32 {
         self.cells.storage().as_ptr()
     }
 
@@ -106,5 +108,44 @@ impl fmt::Display for Universe {
             writeln!(f, "")?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn set_cells(universe: &mut Universe, cells: &[(usize, usize)]) {
+        universe.cells.clear();
+        for &(row, col) in cells.iter() {
+            let idx = universe.get_index(row, col);
+            universe.cells.set(idx, true);
+        }
+    }
+
+    fn input_spaceship() -> Universe {
+        let mut universe = Universe::new(6, 6);
+        set_cells(&mut universe, &[(1, 2), (2, 3), (3, 1), (3, 2), (3, 3)]);
+        universe
+    }
+
+    fn expected_spaceship() -> Universe {
+        let mut universe = Universe::new(6, 6);
+        set_cells(&mut universe, &[(2, 1), (2, 3), (3, 2), (3, 3), (4, 2)]);
+        universe
+    }
+
+    #[wasm_bindgen_test]
+    pub fn test_tick() {
+        // Let's create a smaller Universe with a small spaceship to test!
+        let mut input_universe = input_spaceship();
+
+        // This is what our spaceship should look like
+        // after one tick in our universe.
+        let expected_universe = expected_spaceship();
+
+        // Call `tick` and then see if the cells in the `Universe`s are the same.
+        input_universe.tick();
+        assert_eq!(input_universe.cells, expected_universe.cells);
     }
 }
