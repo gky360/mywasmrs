@@ -10,9 +10,6 @@ mod utils;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn run() {}
-
-#[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cell {
@@ -78,6 +75,18 @@ impl Universe {
             height,
             cells,
         }
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    pub fn cells(&self) -> *const Cell {
+        self.cells.as_ptr()
     }
 
     pub fn tick(&mut self) {
