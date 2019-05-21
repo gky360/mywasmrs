@@ -7,6 +7,9 @@ use js_sys::Math;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 
+use utils::set_panic_hook;
+
+#[macro_use]
 mod utils;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -46,6 +49,8 @@ impl Universe {
 #[wasm_bindgen]
 impl Universe {
     pub fn new(height: usize, width: usize) -> Universe {
+        set_panic_hook();
+
         let size = width * height;
 
         let mut cells = BitVec::from_elem(size, false);
@@ -87,6 +92,7 @@ impl Universe {
                     (false, 3) => true,
                     (cell, _) => cell,
                 };
+
                 next.set(idx, next_cell);
             }
         }
