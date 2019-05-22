@@ -77,6 +77,11 @@ impl Universe {
         self.cells.storage().as_ptr()
     }
 
+    pub fn toggle_cell(&mut self, row: usize, col: usize) {
+        let idx = self.get_index(row, col);
+        self.cells.set(idx, !self.cells[idx]);
+    }
+
     pub fn tick(&mut self) {
         let mut next = self.cells.clone();
 
