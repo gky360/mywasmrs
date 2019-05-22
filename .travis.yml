@@ -5,7 +5,11 @@ addons:
 
 # Need to cache the whole `.cargo` directory to keep .crates.toml for
 # cargo-update to work
-cache: cargo
+cache:
+  cargo: true
+  directories:
+    - $HOME/.cache/.wasm-pack
+
 before_cache:
   - export CRATE_NAME=mywasmrs
   - rm -rfv target/debug/incremental/{$CRATE_NAME,build_script_build}-*
@@ -29,7 +33,6 @@ install:
   - nvm install v10.15.3
   - npm install -g yarn
   - curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
-  - cargo install wasm-bindgen
 
 script:
   - yarn install
