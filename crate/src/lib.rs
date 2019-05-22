@@ -1,13 +1,16 @@
+// #![feature(test)]
+
 #[cfg(test)]
 #[macro_use]
 extern crate wasm_bindgen_test;
+// extern crate test;
 
 use bit_vec::BitVec;
 use js_sys::Math;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 
-use utils::set_panic_hook;
+use utils::{set_panic_hook, Timer};
 
 #[macro_use]
 mod utils;
@@ -31,17 +34,37 @@ impl Universe {
     }
 
     fn live_neighbor_count(&self, row: usize, col: usize) -> u8 {
-        let mut count = 0;
-        for &dr in [self.height - 1, 0, 1].iter() {
-            for &dc in [self.width - 1, 0, 1].iter() {
-                if dr == 0 && dc == 0 {
-                    continue;
-                }
+        let north = if row == 0 { self.height - 1 } else { row - 1 };
+        let south = if row == self.height - 1 { 0 } else { row + 1 };
+        let west = if col == 0 { self.width - 1 } else { col - 1 };
+        let east = if col == self.width - 1 { 0 } else { col + 1 };
 
-                let idx = self.get_index((row + dr) % self.height, (col + dc) % self.width);
-                count += self.cells[idx] as u8;
-            }
-        }
+        let mut count = 0;
+
+        let nw = self.get_index(north, west);
+        count += self.cells[nw] as u8;
+
+        let n = self.get_index(north, col);
+        count += self.cells[n] as u8;
+
+        let ne = self.get_index(north, east);
+        count += self.cells[ne] as u8;
+
+        let w = self.get_index(row, west);
+        count += self.cells[w] as u8;
+
+        let e = self.get_index(row, east);
+        count += self.cells[e] as u8;
+
+        let sw = self.get_index(south, west);
+        count += self.cells[sw] as u8;
+
+        let s = self.get_index(south, col);
+        count += self.cells[s] as u8;
+
+        let se = self.get_index(south, east);
+        count += self.cells[se] as u8;
+
         count
     }
 }
@@ -83,24 +106,34 @@ impl Universe {
     }
 
     pub fn tick(&mut self) {
-        let mut next = self.cells.clone();
+        let _timer = Timer::new("Universe::tick");
 
-        for row in 0..self.height {
-            for col in 0..self.width {
-                let idx = self.get_index(row, col);
-                let cell = self.cells[idx];
-                let live_neighbors = self.live_neighbor_count(row, col);
+        let mut next = {
+            let _timer = Timer::new("allocate next cells");
+            self.cells.clone()
+        };
 
-                let next_cell = match (cell, live_neighbors) {
-                    (true, 2) | (true, 3) => true,
-                    (true, _) => false,
-                    (false, 3) => true,
-                    (cell, _) => cell,
-                };
+        {
+            let _timer = Timer::new("new generation");
+            for row in 0..self.height {
+                for col in 0..self.width {
+                    let idx = self.get_index(row, col);
+                    let cell = self.cells[idx];
+                    let live_neighbors = self.live_neighbor_count(row, col);
 
-                next.set(idx, next_cell);
+                    let next_cell = match (cell, live_neighbors) {
+                        (true, 2) | (true, 3) => true,
+                        (true, _) => false,
+                        (false, 3) => true,
+                        (cell, _) => cell,
+                    };
+
+                    next.set(idx, next_cell);
+                }
             }
         }
+
+        let _timer = Timer::new("free old cells");
         self.cells = next;
     }
 
@@ -160,3 +193,12 @@ mod tests {
         assert_eq!(input_universe.cells, expected_universe.cells);
     }
 }
+
+// #[bench]
+// fn universe_ticks(b: &mut test::Bencher) {
+//     let mut universe = Universe::new(64, 64);
+
+//     b.iter(|| {
+//         universe.tick();
+//     });
+// }
