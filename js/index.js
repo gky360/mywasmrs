@@ -1,3 +1,5 @@
+import Fps from "./fps";
+
 const run = async () => {
   const { Universe } = await import("../crate/pkg");
   const { memory } = await import("../crate/pkg/mywasmrs_bg");
@@ -36,8 +38,10 @@ const run = async () => {
   const ctx = canvas.getContext("2d");
 
   let animationId = null;
+  const fps = new Fps();
 
   const renderLoop = () => {
+    fps.render();
     universe.tick();
 
     drawGrid();
